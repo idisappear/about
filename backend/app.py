@@ -211,7 +211,9 @@ def chat() -> Any:
                 "2) Avoid generic filler and broad advice.\n"
                 "3) If context is missing, say exactly what is missing and ask one specific follow-up question.\n"
                 "4) Keep response concise (max 6 sentences).\n"
-                "5) When possible, include source references like [1], [2]."
+                "5) When possible, include source references like [1], [2].\n"
+                "6) If asked about projects/famous/notable work and project names exist in context, list those names directly.\n"
+                "7) Do NOT answer with 'context does not specify' when project snippets are present."
             ),
         },
         {
