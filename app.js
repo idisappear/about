@@ -1,6 +1,9 @@
 (function () {
   var CHAT_KEY_STORAGE = "site_openai_api_key";
   var CHAT_MODEL = "gpt-4o-mini";
+  var chatConfig = window.CHAT_CONFIG || {};
+  var CHAT_API_URL = typeof chatConfig.apiUrl === "string" ? chatConfig.apiUrl.trim() : "";
+  var ALLOW_BROWSER_KEY = chatConfig.allowBrowserKey !== false;
 
   function setYear() {
     var yearEl = document.getElementById("year");
@@ -98,6 +101,33 @@
     return extractOutputText(data) || "I could not generate a response.";
   }
 
+  async function sendToBackend(apiUrl, history) {
+    var response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: CHAT_MODEL,
+        messages: history,
+      }),
+    });
+
+    if (!response.ok) {
+      var errorText = await response.text();
+      throw new Error("Backend request failed (" + response.status + "): " + errorText);
+    }
+
+    var data = await response.json();
+    if (data && typeof data.reply === "string" && data.reply.trim()) {
+      return data.reply.trim();
+    }
+    if (data && typeof data.output_text === "string" && data.output_text.trim()) {
+      return data.output_text.trim();
+    }
+    return "I could not generate a response.";
+  }
+
   function initChatWidget() {
     var toggleBtn = document.getElementById("chat-toggle");
     var popup = document.getElementById("chat-popup");
@@ -106,6 +136,7 @@
     var form = document.getElementById("chat-form");
     var inputEl = document.getElementById("chat-input");
     var submitBtn = form ? form.querySelector("button[type='submit']") : null;
+    var settingsEl = popup.querySelector(".chat-settings");
     var apiKeyInput = document.getElementById("chat-api-key");
     var saveKeyBtn = document.getElementById("chat-save-key");
     var clearKeyBtn = document.getElementById("chat-clear-key");
@@ -139,8 +170,18 @@
     }
 
     function updateAuthStatus() {
+      if (CHAT_API_URL) {
+        setStatus("Connected through backend endpoint.");
+        return;
+      }
+
+      if (!ALLOW_BROWSER_KEY) {
+        setStatus("Set CHAT_CONFIG.apiUrl in chat.config.js to enable chat.");
+        return;
+      }
+
       var key = readApiKey();
-      if (key) {
+      if (key && key.indexOf("sk-") === 0) {
         setStatus("Connected to OpenAI API.");
       } else {
         setStatus("Paste your OpenAI API key, then click Connect.");
@@ -161,8 +202,8 @@
     if (saveKeyBtn && apiKeyInput) {
       saveKeyBtn.addEventListener("click", function () {
         var key = apiKeyInput.value.trim();
-        if (!key) {
-          setStatus("Enter a valid API key first.");
+        if (!key || key.indexOf("sk-") !== 0) {
+          setStatus("Enter a valid OpenAI key starting with sk-.");
           return;
         }
         localStorage.setItem(CHAT_KEY_STORAGE, key);
@@ -186,7 +227,12 @@
       if (!text) return;
 
       var apiKey = readApiKey();
-      if (!apiKey) {
+      if (!CHAT_API_URL && !ALLOW_BROWSER_KEY) {
+        setStatus("Chat disabled: set CHAT_CONFIG.apiUrl in chat.config.js.");
+        return;
+      }
+
+      if (!CHAT_API_URL && !apiKey) {
         setStatus("Connect your OpenAI API key before sending messages.");
         return;
       }
@@ -201,19 +247,29 @@
       history = history.slice(-10);
 
       try {
-        var answer = await sendToOpenAI(apiKey, history);
+        var answer = CHAT_API_URL
+          ? await sendToBackend(CHAT_API_URL, history)
+          : await sendToOpenAI(apiKey, history);
         appendChatMessage(messagesEl, "ai", answer);
         history.push({ role: "assistant", content: answer });
         history = history.slice(-10);
         setStatus("Connected.");
       } catch (error) {
-        appendChatMessage(messagesEl, "system", "Request failed. Check key, quota, or model access.");
-        setStatus(error.message);
+        appendChatMessage(
+          messagesEl,
+          "system",
+          "Request failed. Check endpoint/CORS or OpenAI key, quota, and model access."
+        );
+        setStatus(error && error.message ? error.message : "Request failed.");
       } finally {
         isSending = false;
         submitBtn.disabled = false;
       }
     });
+
+    if (CHAT_API_URL || !ALLOW_BROWSER_KEY) {
+      if (settingsEl) settingsEl.style.display = "none";
+    }
 
     appendChatMessage(messagesEl, "system", "Hi. I am your AI assistant.");
     updateAuthStatus();

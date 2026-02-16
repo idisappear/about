@@ -18,16 +18,22 @@ Layout and behavior files:
 
 The site includes a bottom-right AI chat popup.
 
-How to connect your OpenAI account:
+How to connect:
 1. Open the website.
 2. Click `AI Chat`.
-3. Paste your OpenAI API key (`sk-...`) into the key field.
-4. Click `Connect`.
+3. Choose one mode:
+   - Recommended: set `apiUrl` in `chat.config.js` to your backend proxy endpoint, or
+   - Quick test: keep `allowBrowserKey: true`, paste OpenAI API key (`sk-...`) in widget, click `Connect`.
 
 Notes:
 - The key is stored in your browser `localStorage` on your device.
 - Do not hardcode API keys in this repo, because GitHub Pages is public/static.
 - For production-grade security, use a backend proxy endpoint instead of browser-direct API calls.
+
+Troubleshooting:
+- If chat UI looks unstyled, clear browser cache and hard refresh.
+- If chat does not connect in browser-key mode, check key validity, usage quota, and model access.
+- If using backend mode, verify CORS and endpoint response format: `{ \"reply\": \"...\" }` or `{ \"output_text\": \"...\" }`.
 
 ## Publish on GitHub Pages
 
