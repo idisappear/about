@@ -116,7 +116,7 @@ KB_SNIPPETS = _load_kb_snippets()
 def _retrieve_context(query: str, top_k: int = TOP_K_SNIPPETS) -> list[dict[str, str]]:
     q_tokens = set(_tokenize(query))
     if not q_tokens:
-        return []
+        return KB_SNIPPETS[:top_k]
 
     scored: list[tuple[float, dict[str, str]]] = []
     for snip in KB_SNIPPETS:
@@ -130,7 +130,17 @@ def _retrieve_context(query: str, top_k: int = TOP_K_SNIPPETS) -> list[dict[str,
         scored.append((score, snip))
 
     scored.sort(key=lambda x: x[0], reverse=True)
-    return [item[1] for item in scored[:top_k]]
+    if scored:
+        return [item[1] for item in scored[:top_k]]
+
+    # Fallback for broad questions: prioritize project snippets, then any snippets.
+    query_l = query.lower()
+    if any(term in query_l for term in {"project", "projects", "portfolio", "work", "built"}):
+        project_snips = [s for s in KB_SNIPPETS if "project" in s["source"].lower()]
+        if project_snips:
+            return project_snips[:top_k]
+
+    return KB_SNIPPETS[:top_k]
 
 
 def _build_context_block(snippets: list[dict[str, str]]) -> str:
@@ -145,7 +155,13 @@ def _build_context_block(snippets: list[dict[str, str]]) -> str:
 
 @app.get("/health")
 def health() -> Any:
-    return jsonify({"ok": True, "kb_snippets": len(KB_SNIPPETS)})
+    return jsonify(
+        {
+            "ok": True,
+            "kb_snippets": len(KB_SNIPPETS),
+            "kb_sources": sorted({s["source"] for s in KB_SNIPPETS}),
+        }
+    )
 
 
 @app.route("/chat", methods=["POST", "OPTIONS"])
