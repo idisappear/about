@@ -1,14 +1,18 @@
 # Simple GitHub Pages Website
 
-This is a minimal personal website with two sections:
-- About Me
-- Contacts
+This is a minimal personal website with content managed in Markdown files.
 
-## Customize
+## Content management (Markdown-first)
 
-Edit these files:
-- `index.html` for your content
-- `styles.css` for styling
+Edit only these files to update site content:
+- `content/hero.md`
+- `content/about.md`
+- `content/contacts.md`
+
+Layout and behavior files:
+- `index.html` (page shell)
+- `styles.css` (design)
+- `app.js` (loads Markdown content)
 
 ## Publish on GitHub Pages
 

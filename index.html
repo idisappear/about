@@ -19,41 +19,16 @@
 
     <header class="hero container fade-up">
       <p class="eyebrow">Personal Site</p>
-      <h1>Your Name</h1>
-      <p class="lead">Short intro about who you are, what you build, and what drives your work.</p>
-      <a class="cta" href="#contact">Contact Me</a>
+      <div class="markdown hero-markdown" data-md="content/hero.md"></div>
     </header>
 
     <main class="container grid">
       <section id="about" class="card fade-up delay-1">
-        <h2>About Me</h2>
-        <p>
-          I am a passionate person who enjoys learning, building useful projects, and sharing ideas.
-          Add a few lines here about your background, interests, and goals.
-        </p>
-        <div class="tags" aria-label="Interests">
-          <span>Design</span>
-          <span>Development</span>
-          <span>Problem Solving</span>
-        </div>
+        <div class="markdown" data-md="content/about.md"></div>
       </section>
 
       <section id="contact" class="card fade-up delay-2">
-        <h2>Contacts</h2>
-        <ul class="contact-list">
-          <li>
-            <span>Email</span>
-            <a href="mailto:you@example.com">you@example.com</a>
-          </li>
-          <li>
-            <span>GitHub</span>
-            <a href="https://github.com/your-username" target="_blank" rel="noreferrer">github.com/your-username</a>
-          </li>
-          <li>
-            <span>LinkedIn</span>
-            <a href="https://www.linkedin.com/in/your-username" target="_blank" rel="noreferrer">linkedin.com/in/your-username</a>
-          </li>
-        </ul>
+        <div class="markdown" data-md="content/contacts.md"></div>
       </section>
     </main>
 
@@ -61,8 +36,7 @@
       <p>&copy; <span id="year"></span> Your Name</p>
     </footer>
 
-    <script>
-      document.getElementById("year").textContent = new Date().getFullYear();
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>

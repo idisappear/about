@@ -75,37 +75,6 @@ body {
   margin: 0;
 }
 
-h1 {
-  margin: 0.4rem 0 0.7rem;
-  font-size: clamp(2.2rem, 7.5vw, 4.8rem);
-  line-height: 0.95;
-}
-
-.lead {
-  max-width: 62ch;
-  color: var(--muted);
-  margin: 0 0 1.4rem;
-  font-size: clamp(1rem, 2.7vw, 1.2rem);
-}
-
-.cta {
-  display: inline-block;
-  text-decoration: none;
-  color: #fff;
-  background: linear-gradient(135deg, var(--accent), #d5653e);
-  border-radius: 999px;
-  padding: 0.72rem 1.15rem;
-  font-weight: 700;
-  transition: transform 180ms ease, box-shadow 220ms ease, filter 180ms ease;
-  box-shadow: 0 12px 24px -14px rgba(97, 36, 22, 0.8);
-}
-
-.cta:hover {
-  transform: translateY(-2px);
-  filter: saturate(1.08);
-  box-shadow: 0 18px 26px -14px rgba(97, 36, 22, 0.85);
-}
-
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -139,57 +108,70 @@ h1 {
   box-shadow: 0 24px 40px -26px rgba(36, 21, 8, 0.62);
 }
 
-h2 {
+.markdown > *:first-child {
+  margin-top: 0;
+}
+
+.markdown > *:last-child {
+  margin-bottom: 0;
+}
+
+.hero-markdown h1 {
+  margin: 0.4rem 0 0.7rem;
+  font-size: clamp(2.2rem, 7.5vw, 4.8rem);
+  line-height: 0.95;
+}
+
+.hero-markdown p {
+  max-width: 62ch;
+  color: var(--muted);
+  margin: 0 0 1.1rem;
+  font-size: clamp(1rem, 2.7vw, 1.2rem);
+}
+
+.hero-markdown a {
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent), #d5653e);
+  border-radius: 999px;
+  padding: 0.72rem 1.15rem;
+  font-weight: 700;
+  transition: transform 180ms ease, box-shadow 220ms ease, filter 180ms ease;
+  box-shadow: 0 12px 24px -14px rgba(97, 36, 22, 0.8);
+}
+
+.hero-markdown a:hover {
+  transform: translateY(-2px);
+  filter: saturate(1.08);
+  box-shadow: 0 18px 26px -14px rgba(97, 36, 22, 0.85);
+}
+
+.markdown h2 {
   margin: 0 0 0.6rem;
   font-size: 1.35rem;
 }
 
-p {
-  margin: 0;
-}
-
-.tags {
-  margin-top: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.tags span {
+.markdown h3 {
+  margin: 1rem 0 0.35rem;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 0.78rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.3rem 0.65rem;
-  background: rgba(255, 255, 255, 0.7);
-}
-
-.contact-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.8rem;
-}
-
-.contact-list li {
-  display: grid;
-  gap: 0.2rem;
-  border-top: 1px dashed var(--line);
-  padding-top: 0.75rem;
-}
-
-.contact-list li:first-child {
-  border-top: 0;
-  padding-top: 0;
-}
-
-.contact-list span {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--muted);
+}
+
+.markdown p {
+  margin: 0 0 0.7rem;
+}
+
+.markdown ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1rem;
+}
+
+.markdown li {
+  margin-bottom: 0.3rem;
 }
 
 a {
