@@ -44,6 +44,16 @@ def _extract_output_text(response: Any) -> str:
     return "\n".join(parts).strip()
 
 
+def _extract_chat_completion_text(response: Any) -> str:
+    choices = getattr(response, "choices", None) or []
+    if not choices:
+        return ""
+    first = choices[0]
+    message = getattr(first, "message", None)
+    content = getattr(message, "content", "") if message else ""
+    return content.strip() if isinstance(content, str) else ""
+
+
 @app.get("/health")
 def health() -> Any:
     return jsonify({"ok": True})
@@ -99,8 +109,15 @@ def chat() -> Any:
 
     try:
         client = OpenAI(api_key=OPENAI_API_KEY)
-        response = client.responses.create(model=model, input=input_items)
-        reply = _extract_output_text(response) or "I could not generate a response."
+        if hasattr(client, "responses"):
+            response = client.responses.create(model=model, input=input_items)
+            reply = _extract_output_text(response) or "I could not generate a response."
+        else:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=input_items,
+            )
+            reply = _extract_chat_completion_text(completion) or "I could not generate a response."
         return (jsonify({"reply": reply}), 200, _cors_headers(origin))
     except Exception as exc:  # pragma: no cover
         return (jsonify({"error": str(exc)}), 500, _cors_headers(origin))
