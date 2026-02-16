@@ -153,22 +153,21 @@ def _build_context_block(snippets: list[dict[str, str]]) -> str:
     return "\n\n".join(lines)
 
 
-def _extract_project_names_from_kb(limit: int = 3) -> list[str]:
-    names: list[str] = []
-    pattern = re.compile(r"^\s{0,3}#{1,6}\s+\d+\)\s*(.+?)\s*$")
-
-    project_file = KB_DIR / "projects.md"
-    if project_file.exists():
-        raw = project_file.read_text(encoding="utf-8", errors="ignore")
-        for raw_line in raw.splitlines():
-            m = pattern.match(raw_line)
-            if m:
-                name = m.group(1).strip()
-                if name and name not in names:
-                    names.append(name)
-            if len(names) >= limit:
-                break
-    return names[:limit]
+def _normalize_generic_refusal(reply: str) -> str:
+    text = reply.strip()
+    lowered = text.lower()
+    refusal_markers = (
+        "context does not provide",
+        "context does not specify",
+        "not enough context",
+        "insufficient context",
+    )
+    if any(marker in lowered for marker in refusal_markers):
+        return (
+            "I do not see that detail in my current profile notes. "
+            "If you want, reach out via my contact details and I can share more specific background."
+        )
+    return text
 
 
 @app.get("/health")
@@ -220,36 +219,16 @@ def chat() -> Any:
     retrieved = _retrieve_context(latest_user_message)
     context_block = _build_context_block(retrieved)
 
-    query_l = latest_user_message.lower()
-    if any(k in query_l for k in {"top 3 projects", "name top 3 projects", "top three projects"}):
-        names = _extract_project_names_from_kb(limit=3)
-        if names:
-            bullet_lines = "\n".join(f"- {n}" for n in names)
-            return (
-                jsonify(
-                    {
-                        "reply": (
-                            "Top 3 projects from the knowledge base:\n"
-                            f"{bullet_lines}"
-                        )
-                    }
-                ),
-                200,
-                _cors_headers(origin),
-            )
-
     input_items = [
         {
             "role": "system",
             "content": (
-                "You are the website owner's assistant. Rules:\n"
-                "1) Use ONLY the provided knowledge-base context.\n"
-                "2) Avoid generic filler and broad advice.\n"
-                "3) If context is missing, say exactly what is missing and ask one specific follow-up question.\n"
-                "4) Keep response concise (max 6 sentences).\n"
-                "5) When possible, include source references like [1], [2].\n"
-                "6) If asked about projects/famous/notable work and project names exist in context, list those names directly.\n"
-                "7) Do NOT answer with 'context does not specify' when project snippets are present."
+                "You are the website owner's assistant.\n"
+                "Prioritize the provided knowledge-base context and treat it as the primary source.\n"
+                "Be concise, specific, and practical; avoid generic filler.\n"
+                "If the user asks for details not present in context, say that clearly in one sentence, "
+                "then provide the closest helpful answer and invite them to reach out for deeper details.\n"
+                "Do not use phrases like 'the context does not provide/specify'."
             ),
         },
         {
@@ -282,6 +261,7 @@ def chat() -> Any:
                 messages=input_items,
             )
             reply = _extract_chat_completion_text(completion) or "I could not generate a response."
+        reply = _normalize_generic_refusal(reply)
         return (jsonify({"reply": reply}), 200, _cors_headers(origin))
     except Exception as exc:  # pragma: no cover
         return (jsonify({"error": str(exc)}), 500, _cors_headers(origin))
