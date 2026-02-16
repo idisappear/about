@@ -36,6 +36,34 @@
       <p>&copy; <span id="year"></span> Your Name</p>
     </footer>
 
+    <button id="chat-toggle" class="chat-toggle" type="button" aria-haspopup="dialog" aria-controls="chat-popup">
+      AI Chat
+    </button>
+
+    <section id="chat-popup" class="chat-popup" role="dialog" aria-label="AI Chat Assistant" aria-hidden="true">
+      <div class="chat-header">
+        <div>
+          <strong>AI Assistant</strong>
+          <p>Ask about me, projects, or contacts</p>
+        </div>
+        <button id="chat-close" class="chat-close" type="button" aria-label="Close chat">x</button>
+      </div>
+
+      <div id="chat-messages" class="chat-messages" aria-live="polite"></div>
+
+      <form id="chat-form" class="chat-form">
+        <input id="chat-input" type="text" placeholder="Type your message..." maxlength="600" required />
+        <button type="submit">Send</button>
+      </form>
+
+      <div class="chat-settings">
+        <input id="chat-api-key" type="password" placeholder="sk-... OpenAI API key" autocomplete="off" />
+        <button id="chat-save-key" type="button">Connect</button>
+        <button id="chat-clear-key" type="button">Disconnect</button>
+      </div>
+      <p id="chat-status" class="chat-status"></p>
+    </section>
+
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="app.js"></script>
   </body>
