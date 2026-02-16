@@ -21,9 +21,8 @@ The site includes a bottom-right AI chat popup.
 How to connect:
 1. Open the website.
 2. Click `AI Chat`.
-3. Choose one mode:
-   - Recommended: set `apiUrl` in `chat.config.js` to your backend proxy endpoint, or
-   - Quick test: keep `allowBrowserKey: true`, paste OpenAI API key (`sk-...`) in widget, click `Connect`.
+3. Set `apiUrl` in `chat.config.js` to your backend endpoint URL (`.../chat`).
+4. Keep `allowBrowserKey: false` for production.
 
 Notes:
 - The key is stored in your browser `localStorage` on your device.
@@ -32,8 +31,38 @@ Notes:
 
 Troubleshooting:
 - If chat UI looks unstyled, clear browser cache and hard refresh.
-- If chat does not connect in browser-key mode, check key validity, usage quota, and model access.
-- If using backend mode, verify CORS and endpoint response format: `{ \"reply\": \"...\" }` or `{ \"output_text\": \"...\" }`.
+- If using backend mode, verify CORS and endpoint response format: `{ \"reply\": \"...\" }`.
+
+## Backend (Render)
+
+Backend files are in `backend/`:
+- `backend/app.py`
+- `backend/requirements.txt`
+- `backend/.env.example`
+
+### Deploy on Render (free plan)
+
+1. Push this repo to GitHub.
+2. In Render dashboard, click **New +** -> **Web Service**.
+3. Connect your GitHub repo.
+4. Configure service:
+   - **Environment**: Python
+   - **Root Directory**: `backend`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn app:app`
+5. Add environment variables:
+   - `OPENAI_API_KEY` = your OpenAI secret key
+   - `OPENAI_MODEL` = `gpt-4o-mini`
+   - `ALLOWED_ORIGINS` = `https://idisappear.github.io`
+6. Deploy and wait until service is live.
+7. Open `https://<your-render-service>.onrender.com/health` and confirm it returns `{\"ok\":true}`.
+8. Update `chat.config.js`:
+   - `apiUrl: \"https://<your-render-service>.onrender.com/chat\"`
+9. Commit/push frontend changes and hard refresh your GitHub Pages site.
+
+### Optional Blueprint deploy
+
+This repo includes `render.yaml`, so you can also use Render Blueprint deploy.
 
 ## Publish on GitHub Pages
 
