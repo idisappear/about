@@ -39,6 +39,7 @@ Backend files are in `backend/`:
 - `backend/app.py`
 - `backend/requirements.txt`
 - `backend/.env.example`
+- `backend/knowledge_base/*.md`
 
 ### Deploy on Render (free plan)
 
@@ -54,6 +55,8 @@ Backend files are in `backend/`:
    - `OPENAI_API_KEY` = your OpenAI secret key
    - `OPENAI_MODEL` = `gpt-4o-mini`
    - `ALLOWED_ORIGINS` = `https://idisappear.github.io`
+   - `KB_DIR` = `knowledge_base`
+   - `TOP_K_SNIPPETS` = `4`
 6. Deploy and wait until service is live.
 7. Open `https://<your-render-service>.onrender.com/health` and confirm it returns `{\"ok\":true}`.
 8. Update `chat.config.js`:
@@ -63,6 +66,21 @@ Backend files are in `backend/`:
 ### Optional Blueprint deploy
 
 This repo includes `render.yaml`, so you can also use Render Blueprint deploy.
+
+## Knowledge base retrieval
+
+The backend retrieves answer context from local files in:
+- `backend/knowledge_base/`
+
+How to use it:
+1. Put your factual info in `.md` files in `backend/knowledge_base/`.
+2. Keep content specific (bio facts, project details, links, services, pricing, availability).
+3. Redeploy Render after updates.
+
+Behavior policy (already enforced in prompt):
+- Assistant uses provided KB context only.
+- Avoids generic filler responses.
+- If KB lacks data, it asks one specific follow-up question.
 
 ## Publish on GitHub Pages
 

@@ -1,4 +1,6 @@
 import os
+import re
+from pathlib import Path
 from typing import Any
 
 from flask import Flask, jsonify, request
@@ -8,6 +10,8 @@ app = Flask(__name__)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+KB_DIR = Path(os.getenv("KB_DIR", "knowledge_base"))
+TOP_K_SNIPPETS = int(os.getenv("TOP_K_SNIPPETS", "4"))
 ALLOWED_ORIGINS = {
     origin.strip()
     for origin in os.getenv(
@@ -15,6 +19,35 @@ ALLOWED_ORIGINS = {
         "https://idisappear.github.io,http://localhost:5173,http://127.0.0.1:5500",
     ).split(",")
     if origin.strip()
+}
+STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "how",
+    "i",
+    "in",
+    "is",
+    "it",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "this",
+    "to",
+    "what",
+    "who",
+    "with",
+    "you",
+    "your",
 }
 
 
@@ -54,9 +87,65 @@ def _extract_chat_completion_text(response: Any) -> str:
     return content.strip() if isinstance(content, str) else ""
 
 
+def _tokenize(text: str) -> list[str]:
+    return [t for t in re.findall(r"[a-z0-9]{2,}", text.lower()) if t not in STOPWORDS]
+
+
+def _load_kb_snippets() -> list[dict[str, str]]:
+    snippets: list[dict[str, str]] = []
+    if not KB_DIR.exists():
+        return snippets
+
+    for path in sorted(KB_DIR.glob("**/*")):
+        if not path.is_file() or path.suffix.lower() not in {".md", ".txt"}:
+            continue
+        raw = path.read_text(encoding="utf-8", errors="ignore").strip()
+        if not raw:
+            continue
+        for block in re.split(r"\n\s*\n", raw):
+            clean = " ".join(block.split()).strip()
+            if len(clean) < 25:
+                continue
+            snippets.append({"source": str(path.relative_to(KB_DIR)), "text": clean})
+    return snippets
+
+
+KB_SNIPPETS = _load_kb_snippets()
+
+
+def _retrieve_context(query: str, top_k: int = TOP_K_SNIPPETS) -> list[dict[str, str]]:
+    q_tokens = set(_tokenize(query))
+    if not q_tokens:
+        return []
+
+    scored: list[tuple[float, dict[str, str]]] = []
+    for snip in KB_SNIPPETS:
+        s_tokens = set(_tokenize(snip["text"]))
+        if not s_tokens:
+            continue
+        overlap = q_tokens & s_tokens
+        if not overlap:
+            continue
+        score = len(overlap) / (len(q_tokens) ** 0.5)
+        scored.append((score, snip))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [item[1] for item in scored[:top_k]]
+
+
+def _build_context_block(snippets: list[dict[str, str]]) -> str:
+    if not snippets:
+        return "No relevant knowledge-base snippets were retrieved."
+
+    lines = []
+    for idx, snip in enumerate(snippets, start=1):
+        lines.append(f"[{idx}] source={snip['source']}\n{snip['text']}")
+    return "\n\n".join(lines)
+
+
 @app.get("/health")
 def health() -> Any:
-    return jsonify({"ok": True})
+    return jsonify({"ok": True, "kb_snippets": len(KB_SNIPPETS)})
 
 
 @app.route("/chat", methods=["POST", "OPTIONS"])
@@ -87,10 +176,31 @@ def chat() -> Any:
             _cors_headers(origin),
         )
 
+    latest_user_message = ""
+    for m in reversed(messages):
+        if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str):
+            latest_user_message = m.get("content", "").strip()
+            if latest_user_message:
+                break
+
+    retrieved = _retrieve_context(latest_user_message)
+    context_block = _build_context_block(retrieved)
+
     input_items = [
         {
             "role": "system",
-            "content": "You are the website owner's AI assistant. Keep responses concise and useful.",
+            "content": (
+                "You are the website owner's assistant. Rules:\n"
+                "1) Use ONLY the provided knowledge-base context.\n"
+                "2) Avoid generic filler and broad advice.\n"
+                "3) If context is missing, say exactly what is missing and ask one specific follow-up question.\n"
+                "4) Keep response concise (max 6 sentences).\n"
+                "5) When possible, include source references like [1], [2]."
+            ),
+        },
+        {
+            "role": "system",
+            "content": f"Knowledge base context:\n{context_block}",
         }
     ]
 

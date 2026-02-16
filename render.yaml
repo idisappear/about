@@ -13,3 +13,7 @@ services:
         value: gpt-4o-mini
       - key: ALLOWED_ORIGINS
         value: https://idisappear.github.io
+      - key: KB_DIR
+        value: knowledge_base
+      - key: TOP_K_SNIPPETS
+        value: "4"
