@@ -153,6 +153,24 @@ def _build_context_block(snippets: list[dict[str, str]]) -> str:
     return "\n\n".join(lines)
 
 
+def _extract_project_names_from_kb(limit: int = 3) -> list[str]:
+    names: list[str] = []
+    pattern = re.compile(r"^\s{0,3}#{1,6}\s+\d+\)\s*(.+?)\s*$")
+
+    project_file = KB_DIR / "projects.md"
+    if project_file.exists():
+        raw = project_file.read_text(encoding="utf-8", errors="ignore")
+        for raw_line in raw.splitlines():
+            m = pattern.match(raw_line)
+            if m:
+                name = m.group(1).strip()
+                if name and name not in names:
+                    names.append(name)
+            if len(names) >= limit:
+                break
+    return names[:limit]
+
+
 @app.get("/health")
 def health() -> Any:
     return jsonify(
@@ -201,6 +219,24 @@ def chat() -> Any:
 
     retrieved = _retrieve_context(latest_user_message)
     context_block = _build_context_block(retrieved)
+
+    query_l = latest_user_message.lower()
+    if any(k in query_l for k in {"top 3 projects", "name top 3 projects", "top three projects"}):
+        names = _extract_project_names_from_kb(limit=3)
+        if names:
+            bullet_lines = "\n".join(f"- {n}" for n in names)
+            return (
+                jsonify(
+                    {
+                        "reply": (
+                            "Top 3 projects from the knowledge base:\n"
+                            f"{bullet_lines}"
+                        )
+                    }
+                ),
+                200,
+                _cors_headers(origin),
+            )
 
     input_items = [
         {
